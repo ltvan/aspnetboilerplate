@@ -98,6 +98,7 @@ namespace Abp.NHibernate.Interceptors
 
         public override bool OnFlushDirty(object entity, object id, object[] currentState, object[] previousState, string[] propertyNames, IType[] types)
         {
+            var updated = false;
             //Set modification audits
             if (entity is IHasModificationTime)
             {
@@ -106,6 +107,7 @@ namespace Abp.NHibernate.Interceptors
                     if (propertyNames[i] == "LastModificationTime")
                     {
                         currentState[i] = (entity as IHasModificationTime).LastModificationTime = Clock.Now;
+                        updated = true;
                     }
                 }
             }
@@ -117,6 +119,7 @@ namespace Abp.NHibernate.Interceptors
                     if (propertyNames[i] == "LastModifierUserId")
                     {
                         currentState[i] = (entity as IModificationAudited).LastModifierUserId = _abpSession.Value.UserId;
+                        updated = true;
                     }
                 }
             }
@@ -144,6 +147,7 @@ namespace Abp.NHibernate.Interceptors
                             if (propertyNames[i] == "DeletionTime")
                             {
                                 currentState[i] = (entity as IHasDeletionTime).DeletionTime = Clock.Now;
+                                updated = true;
                             }
                         }
                     }
@@ -156,6 +160,7 @@ namespace Abp.NHibernate.Interceptors
                             if (propertyNames[i] == "DeleterUserId")
                             {
                                 currentState[i] = (entity as IDeletionAudited).DeleterUserId = _abpSession.Value.UserId;
+                                updated = true;
                             }
                         }
                     }
@@ -177,7 +182,7 @@ namespace Abp.NHibernate.Interceptors
 
             TriggerDomainEvents(entity);
 
-            return base.OnFlushDirty(entity, id, currentState, previousState, propertyNames, types);
+            return base.OnFlushDirty(entity, id, currentState, previousState, propertyNames, types) || updated;
         }
 
         public override void OnDelete(object entity, object id, object[] state, string[] propertyNames, IType[] types)
